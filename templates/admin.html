@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+        h1, h2 {
+            margin-bottom: 20px;
+        }
+        table {
+            margin-bottom: 40px;
+        }
+        .qr-code {
+            width: 100px; /* Set a width for your QR codes */
+            height: auto; /* Maintain aspect ratio */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Admin Dashboard</h1>
+        
+        <h2>Generated Tickets</h2>
+        <table class="table table-bordered table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Type</th>
+                    <th>QR Code</th>  <!-- Add QR Code column -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td>{{ ticket.id }}</td>
+                    <td>{{ ticket.name }}</td>
+                    <td>{{ ticket.phone }}</td>
+                    <td>{{ ticket.ticket_type }}</td>
+                    <td> <img class="qr-code" src="{{ upload_folder }}/{{ ticket.id }}.png" alt="QR Code for ticket {{ ticket.id }}"></td> <!-- Display QR code -->
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Scan Logs</h2>
+        <table class="table table-bordered table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Scan ID</th>
+                    <th>Ticket ID</th>
+                    <th>Name</th>
+                    <th>Scanned At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in scans %}
+                <tr>
+                    <td>{{ log.id }}</td>
+                    <td>{{ log.ticket_id }}</td>
+                    <td>{{ log.name }}</td>
+                    <td>{{ log.scanned_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
