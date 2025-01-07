@@ -7,3 +7,4 @@ python-dotenv
 marshmallow  
 requests
 gunicorn
+flask_mail

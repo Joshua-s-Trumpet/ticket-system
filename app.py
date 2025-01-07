@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, request, jsonify, render_template, abort, current_app
 import qrcode
 from datetime import datetime
@@ -10,6 +9,7 @@ import json
 import logging
 from models import db, Ticket, ScanLog
 from flasgger import Swagger, swag_from
+from flask_mail import Mail, Message
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,6 +17,14 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
+# Email configuration
+app.config['MAIL_SERVER'] = 'smtp-relay.brevo.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = '8310c2001@smtp-brevo.com'  
+app.config['MAIL_PASSWORD'] = 'nY9jvcB7x'
+app.config['MAIL_DEFAULT_SENDER'] = 'fearless@fearless.com'
+
+mail = Mail(app)
 # Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -306,6 +314,23 @@ def validate_ticket_data(data, metadata, customer):
         
     return errors
 
+# Send QR code via email
+def send_qr_code_via_email(ticket, qr_filename):
+    """Send the generated QR code to the email address of the ticket holder"""
+    try:
+        msg = Message(
+            'Your Event Ticket',
+            recipients=[ticket.email]
+        )
+        msg.body = f"Hello {ticket.name},\n\nYour ticket has been generated. Please find the attached QR code to validate your entry."
+        msg.attach(qr_filename, 'image/png', open(os.path.join(app.config['UPLOAD_FOLDER'], qr_filename), 'rb').read())
+        mail.send(msg)
+        logger.info(f"Sent email to {ticket.email} with QR code")
+
+    except Exception as e:
+        logger.error(f"Error sending email to {ticket.email}: {str(e)}")
+        
+        
 @app.route('/webhook/paystack', methods=['POST'])
 @verify_paystack_webhook
 @swag_from(paystack_webhook_spec())
@@ -358,6 +383,9 @@ def paystack_webhook():
             # Generate QR code
             base_url = request.url_root.rstrip('/')
             qr_filename = generate_qr_code(ticket.id, base_url)
+            
+            # Send the QR code via email
+            send_qr_code_via_email(ticket, qr_filename)
             
             logger.info(f"Successfully created ticket {ticket.id} for {customer['email']}")
             
