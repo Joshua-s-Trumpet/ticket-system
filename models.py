@@ -15,6 +15,7 @@ class Ticket(db.Model):
     payment_status = db.Column(db.String(20), default='pending')
     amount = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    scan_logs = db.relationship('ScanLog', backref='ticket', lazy=True)
 
 class ScanLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)

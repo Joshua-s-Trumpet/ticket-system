@@ -32,7 +32,10 @@
                     <th>ID</th>
                     <th>Name</th>
                     <th>Phone</th>
-                    <th>Type</th>
+                    <th>Email</th>
+                    <th>Payment Reference</th>
+                    <th>Payment Status</th>
+                    <th>Created At</th>
                     <th>QR Code</th>  <!-- Add QR Code column -->
                 </tr>
             </thead>
@@ -42,7 +45,10 @@
                     <td>{{ ticket.id }}</td>
                     <td>{{ ticket.name }}</td>
                     <td>{{ ticket.phone }}</td>
-                    <td>{{ ticket.ticket_type }}</td>
+                    <td>{{ ticket.email }}</td>
+                    <td>{{ ticket.payment_reference }}</td>
+                    <td>{{ ticket.payment_status }}</td>
+                    <td>{{ ticket.created_at }}</td>
                     <td> <img class="qr-code" src="{{ upload_folder }}/{{ ticket.id }}.png" alt="QR Code for ticket {{ ticket.id }}"></td> <!-- Display QR code -->
                 </tr>
                 {% endfor %}
