@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Email configuration
-BREVO_API_KEY = "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"
+BREVO_API_KEY = ""
 
 # Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
