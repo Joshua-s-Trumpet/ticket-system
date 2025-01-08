@@ -1,5 +1,4 @@
-# app.py
-from flask import Flask, request, jsonify, render_template, abort, current_app
+from flask import Flask, request, jsonify, render_template, abort
 import qrcode
 from datetime import datetime
 import os
@@ -8,14 +7,19 @@ import hashlib
 from functools import wraps
 import json
 import logging
+import requests
 from models import db, Ticket, ScanLog
 from flasgger import Swagger, swag_from
+import base64
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Email configuration
+BREVO_API_KEY = ""
 
 # Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
@@ -306,6 +310,68 @@ def validate_ticket_data(data, metadata, customer):
         
     return errors
 
+# Send email using Brevo API
+def send_email_via_brevo_with_attachment(subject, body, customer_email, attachment_data, filename):
+    url = "https://api.brevo.com/v3/smtp/email"
+
+    email_data = {
+        "sender": {
+            "name": "Fearless",
+            "email": "hotdogbakedbeans@gmail.com"
+        },
+        "to": [
+            {
+                "email": customer_email,
+                "name": customer_email.split('@')[0]
+            }
+        ],
+        "subject": subject,
+        "htmlContent": body,
+        "attachment": [
+            {
+                "content": base64.b64encode(attachment_data).decode('utf-8'),
+                "name": filename,
+                "type": "image/png"
+            }
+        ]
+    }
+
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(email_data))
+
+    if response.status_code == 201:
+        logger.info(f"Email sent successfully to {customer_email}")
+    else:
+        logger.error(f"Error sending email to {customer_email}: {response.status_code}, {response.text}")   
+
+# Send QR code via email
+def send_qr_code_via_email(ticket, qr_filename):
+    """Send the generated QR code to the email address of the ticket holder using Brevo API"""
+    try:
+        subject = "Your Event Ticket"
+        body = f"Hello {ticket.name},\n\nYour ticket has been generated. Please find the attached QR code to validate your entry."
+        
+        # Ensure the folder exists
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+        # Read the QR code file
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], qr_filename)
+        with open(file_path, 'rb') as f:
+            attachment_data = f.read()
+        
+        # Send email with QR code as an attachment
+        send_email_via_brevo_with_attachment(subject, body, ticket.email, attachment_data, qr_filename)
+
+        logger.info(f"Sent email to {ticket.email} with QR code")
+
+    except Exception as e:
+        logger.error(f"Error sending email to {ticket.email}: {str(e)}")
+        
 @app.route('/webhook/paystack', methods=['POST'])
 @verify_paystack_webhook
 @swag_from(paystack_webhook_spec())
@@ -358,6 +424,9 @@ def paystack_webhook():
             # Generate QR code
             base_url = request.url_root.rstrip('/')
             qr_filename = generate_qr_code(ticket.id, base_url)
+            
+            # Send the QR code via email
+            send_qr_code_via_email(ticket, qr_filename)
             
             logger.info(f"Successfully created ticket {ticket.id} for {customer['email']}")
             

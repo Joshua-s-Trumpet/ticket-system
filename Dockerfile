@@ -20,7 +20,7 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Create necessary directories
-RUN mkdir -p qr_codes migrations
+RUN mkdir -p qr_codes 
 
 
 # Expose the port the app runs on
